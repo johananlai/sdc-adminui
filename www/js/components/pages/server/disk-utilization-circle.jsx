@@ -25,31 +25,29 @@ var ServerMemoryUtilizationCircle = React.createClass({
         inner: React.PropTypes.string.isRequired
     },
 
-
     getChartData: function() {
         var server = this.props.server.toJSON();
+        if (server.memory_disk_pool_size_bytes < 0) { server.disk_pool_size_bytes = 0; }
 
-        var usedInGB = 0;
+        var used = server.disk_kvm_zvol_used_bytes +
+                   server.disk_kvm_quota_used_bytes +
+                   server.disk_cores_quota_used_bytes +
+                   server.disk_zone_quota_used_bytes +
+                   server.disk_system_used_bytes +
+                   server.disk_installed_images_used_bytes;
+        var provisionable = server.disk_pool_size_bytes - used;
 
-        Object.keys(server.vms).forEach(function(uuid) {
-            var vm = server.vms[uuid];
-            usedInGB += vm.quota;
-        });
-
-        var usedBytes = usedInGB * 1024 * 1024 * 1024;
-
-        var provisionable = this.props.server.getProvisionableValue();
-        if (provisionable < 0) {
-            provisionable = 0;
-        }
+        if (used < 0) { used = 0; }
+        if (provisionable < 0) { provisionable = 0; }
 
         var pieData = [
-            {label: 'Used', value: usedBytes },
+            {label: 'Used', value: used },
             {label: 'Provisionable', value: provisionable },
         ];
         return pieData;
     },
-    drawCircle: function() {
+
+    drawDiskGraph: function() {
         var $node = $(this.getDOMNode()).find('.graph');
 
         if (this.chart) {
@@ -62,43 +60,48 @@ var ServerMemoryUtilizationCircle = React.createClass({
             });
         }
     },
+
     componentDidMount: function() {
-        this.drawCircle();
-        this.props.server.on('change:memory_provisionable_bytes change:reservation_ratio', this.drawCircle, this);
+        this.drawDiskGraph();
+        this.props.server.on('change:memory_provisionable_bytes change:reservation_ratio', this.drawDiskGraph, this);
     },
+
     componentWillUnmount: function() {
-        this.props.server.off('change:memory_provisionable_bytes change:reservation_ratio', this.drawCircle);
+        this.props.server.off('change:memory_provisionable_bytes change:reservation_ratio', this.drawDiskGraph);
     },
+
     render: function() {
         var diameter = parseInt(this.props.diameter);
         var percentmTop = (-(diameter/2) - 9) + 'px';
+
         var server = this.props.server.toJSON();
+        if (server.memory_disk_pool_size_bytes < 0) { server.disk_pool_size_bytes = 0; }
 
-        var total = server.disk_pool_size_bytes;
-        var usedInGB = 0;
+        var usedBytes = server.disk_kvm_zvol_used_bytes +
+                        server.disk_kvm_quota_used_bytes +
+                        server.disk_cores_quota_used_bytes +
+                        server.disk_zone_quota_used_bytes +
+                        server.disk_system_used_bytes +
+                        server.disk_installed_images_used_bytes;
+        var totalBytes = server.disk_pool_size_bytes;
 
-        Object.keys(server.vms).forEach(function(uuid) {
-            var vm = server.vms[uuid];
-            usedInGB += vm.quota;
-        });
+        if (usedBytes < 0) { usedBytes = 0; }
+        if (totalBytes < 0) { totalBytes *= -1; }
 
-        var usedBytes = usedInGB * 1024 * 1024 * 1024;
+        var util_percent = Math.round(usedBytes / totalBytes * 100);
+        if (util_percent < 0) { util_percent = 0; }
 
-        var util_percent = Math.round(usedBytes / total * 100);
-        if (util_percent <= 0) {
-            util_percent = 0;
-        }
         var pctSize, labelSize;
-        if (parseInt(this.props.diameter) > 100) {
+        if (diameter > 100) {
             pctSize = '18px';
             labelSize = '10px';
             percentmTop = parseInt(percentmTop) - 2 + 'px';
         }
 
-        return <div className="server-disk-utilization-circle" style={ {width: this.props.diameter, height: this.props.diameter} }>
-            <div className="graph epoch" style={ {width: this.props.diameter, height: this.props.diameter} }></div>
-            <div className="percent" style={ { 'font-size': pctSize, 'margin-top': percentmTop}}>
-                <strong style={ { 'font-size':labelSize }}>UTILIZATION</strong> {util_percent}%
+        return <div className="server-disk-utilization-circle" style={ {width: diameter, height: diameter} }>
+            <div className="graph epoch" style={ {width: diameter, height: diameter} }></div>
+            <div className="percent" style={ {'fontSize': pctSize, 'marginTop': percentmTop}}>
+                <strong style={ {'fontSize': labelSize} }>UTILIZATION</strong> {util_percent}%
             </div>
         </div>;
     }
