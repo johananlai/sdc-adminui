@@ -172,7 +172,7 @@ var LimitsForm = React.createClass({
                     <div className="form-group">
                         <label className="col-md-4 control-label">Datacenter</label>
                         <div className="col-md-7">
-                            <Chosen className="form-control" placeholder="Select a Datacenter" value={this.state.datacenter} onChange={this.handleChangeDatacenter}>
+                            <Chosen className="form-control" placeholder="Select a Datacenter" value={this.state.datacenter} onChange={this.handleChangeDatacenter} disabled={this.props.initialLimit ? 'disabled' : ''}>
                             <option value=""></option>
                             {
                                 this.state.datacenters.map(function (dc) {
