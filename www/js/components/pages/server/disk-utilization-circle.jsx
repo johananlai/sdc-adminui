@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2016, Joyent, Inc.
  */
 
 var $ = require('jquery');
@@ -27,21 +27,15 @@ var ServerMemoryUtilizationCircle = React.createClass({
 
     getChartData: function() {
         var server = this.props.server.toJSON();
-        if (server.memory_disk_pool_size_bytes < 0) { server.disk_pool_size_bytes = 0; }
 
-        var used = server.disk_kvm_zvol_used_bytes +
-                   server.disk_kvm_quota_used_bytes +
-                   server.disk_cores_quota_used_bytes +
-                   server.disk_zone_quota_used_bytes +
-                   server.disk_system_used_bytes +
-                   server.disk_installed_images_used_bytes;
-        var provisionable = server.disk_pool_size_bytes - used;
+        var provisioned = server.disk_pool_size_bytes - (server.unreserved_disk * 1024);
+        var provisionable = server.unreserved_disk * 1024;
 
-        if (used < 0) { used = 0; }
+        if (provisioned < 0) { provisioned = 0; }
         if (provisionable < 0) { provisionable = 0; }
 
         var pieData = [
-            {label: 'Used', value: used },
+            {label: 'Provisioned', value: provisioned },
             {label: 'Provisionable', value: provisionable },
         ];
         return pieData;
@@ -73,22 +67,12 @@ var ServerMemoryUtilizationCircle = React.createClass({
     render: function() {
         var diameter = parseInt(this.props.diameter);
         var percentmTop = (-(diameter/2) - 9) + 'px';
-
         var server = this.props.server.toJSON();
-        if (server.memory_disk_pool_size_bytes < 0) { server.disk_pool_size_bytes = 0; }
 
-        var usedBytes = server.disk_kvm_zvol_used_bytes +
-                        server.disk_kvm_quota_used_bytes +
-                        server.disk_cores_quota_used_bytes +
-                        server.disk_zone_quota_used_bytes +
-                        server.disk_system_used_bytes +
-                        server.disk_installed_images_used_bytes;
-        var totalBytes = server.disk_pool_size_bytes;
+        var provisioned = server.disk_pool_size_bytes - (server.unreserved_disk * 1024);
+        var total = server.disk_pool_size_bytes;
 
-        if (usedBytes < 0) { usedBytes = 0; }
-        if (totalBytes < 0) { totalBytes *= -1; }
-
-        var util_percent = Math.round(usedBytes / totalBytes * 100);
+        var util_percent = Math.round(provisioned / total * 100);
         if (util_percent < 0) { util_percent = 0; }
 
         var pctSize, labelSize;

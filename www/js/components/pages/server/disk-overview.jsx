@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2016, Joyent, Inc.
  */
 
 var React = require('react');
@@ -21,25 +21,10 @@ var ServerDiskOverview = React.createClass({
     render: function() {
         var server = this.props.server.toJSON();
         if (!server.vms) { return null; }
-        if (server.memory_disk_pool_size_bytes < 0) { server.disk_pool_size_bytes = 0; }
 
-        var usedBytes = server.disk_kvm_zvol_used_bytes +
-                        server.disk_kvm_quota_used_bytes +
-                        server.disk_cores_quota_used_bytes +
-                        server.disk_zone_quota_used_bytes +
-                        server.disk_system_used_bytes +
-                        server.disk_installed_images_used_bytes;
-        var totalBytes = server.disk_pool_size_bytes;
-        var provisionableBytes = totalBytes - usedBytes;
-
-        var disk_attr = [usedBytes, totalBytes, provisionableBytes];
-        for (var i = 0; i < disk_attr.length; i++) {
-            if (disk_attr[i] < 0) { disk_attr[i] = 0; }
-        }
-
-        var used = utils.getReadableSize(disk_attr[0]);
-        var total = utils.getReadableSize(disk_attr[1]);
-        var provisionable = utils.getReadableSize(disk_attr[2]);
+        var provisionable = utils.getReadableSize(server.unreserved_disk * 1024); 
+        var provisioned = utils.getReadableSize(server.disk_pool_size_bytes - (server.unreserved_disk * 1024));
+        var total = utils.getReadableSize(server.disk_pool_size_bytes);
 
         return <div className="disk-overview">
             <div className="row">
@@ -56,7 +41,7 @@ var ServerDiskOverview = React.createClass({
                     <div className="title">Provisionable</div>
                 </div>
                 <div className="provisioned-disk">
-                    <div className="value">{used.value + ' ' + used.measure}</div>
+                    <div className="value">{provisioned.value + ' ' + provisioned.measure}</div>
                     <div className="title">Provisioned</div>
                 </div>
 

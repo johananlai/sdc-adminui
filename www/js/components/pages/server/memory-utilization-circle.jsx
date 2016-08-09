@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2016, Joyent, Inc.
  */
 
 var $ = require('jquery');
@@ -27,21 +27,17 @@ var ServerMemoryUtilizationCircle = React.createClass({
 
     getChartData: function() {
         var server = this.props.server.toJSON();
-        if (server.memory_provisionable_bytes < 0) { server.memory_provisionable_bytes = 0; }
-        if (server.memory_available_bytes < 0) { server.memory_available_bytes = 0; }
-        if (server.memory_total_bytes < 0) { server.memory_total_bytes = 0; }
 
-        var reserved = server.memory_provisionable_bytes + server.memory_available_bytes;
-        var used = server.memory_total_bytes - (2 * server.memory_provisionable_bytes) - server.memory_available_bytes;
+        var reserved = server.reservation_ratio * server.memory_total_bytes
+        var provisioned = ((1-server.reservation_ratio) * server.memory_total_bytes) - server.memory_provisionable_bytes;
         var provisionable = server.memory_provisionable_bytes;
 
-        if (reserved < 0) { reserved = 0; }
-        if (used < 0) { used = 0; }
+        if (provisioned < 0) { provisioned = 0; }
         if (provisionable < 0) { provisionable = 0; }
 
         var pieData = [
-            {label: 'reserved', value: reserved },
-            {label: 'Used', value: used },
+            {label: 'Reserved', value: reserved },
+            {label: 'Provisioned', value: provisioned },
             {label: 'Provisionable', value: provisionable },
         ];
         return pieData;
@@ -73,19 +69,12 @@ var ServerMemoryUtilizationCircle = React.createClass({
     render: function() {
         var diameter = parseInt(this.props.diameter);
         var percentmTop = (-(diameter/2) - 9) + 'px';
-
         var server = this.props.server.toJSON();
-        if (server.memory_provisionable_bytes < 0) { server.memory_provisionable_bytes = 0; }
-        if (server.memory_available_bytes < 0) { server.memory_available_bytes = 0; }
-        if (server.memory_total_bytes < 0) { server.memory_total_bytes = 0; }
 
-        var usedBytes = server.memory_total_bytes - (2 * server.memory_provisionable_bytes) - server.memory_available_bytes;
-        var totalBytes = server.memory_total_bytes;
+        var provisioned = ((1-server.reservation_ratio) * server.memory_total_bytes) - server.memory_provisionable_bytes;
+        var total = server.memory_total_bytes;
 
-        if (usedBytes < 0) { usedBytes = 0; }
-        if (totalBytes < 0) { totalBytes *= -1; }
-
-        var util_percent = Math.round(usedBytes / totalBytes * 100);
+        var util_percent = Math.round(provisioned / total * 100);
         if (util_percent < 0) { util_percent = 0; }
 
         var pctSize, labelSize;

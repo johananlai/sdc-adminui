@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2016, Joyent, Inc.
  */
 
 var React = require('react');
@@ -21,26 +21,13 @@ var ServerMemoryOverview = React.createClass({
     render: function() {
         var server = this.props.server.toJSON();
         if (!server.vms) { return null; }
-        if (server.memory_provisionable_bytes < 0) { server.memory_provisionable_bytes = 0; }
-        if (server.memory_available_bytes < 0) { server.memory_available_bytes = 0; }
-        if (server.memory_total_bytes < 0) { server.memory_total_bytes = 0; }
 
-        var provisionableBytes = server.memory_provisionable_bytes;
-        var provisionedBytes = server.memory_total_bytes - (2 * server.memory_provisionable_bytes) - server.memory_available_bytes;
-        var reservedBytes = server.memory_provisionable_bytes + server.memory_available_bytes;
-        var unreservedBytes = server.memory_total_bytes - server.memory_provisionable_bytes - server.memory_available_bytes;
-        var totalBytes = server.memory_total_bytes;
-
-        memory_attr = [provisionableBytes, provisionedBytes, reservedBytes, unreservedBytes, totalBytes];
-        for (var i = 0; i < memory_attr.length; i++) {
-            if (memory_attr[i] < 0) { memory_attr[i] = 0; }
-        }
-
-        var provisionable = utils.getReadableSize(memory_attr[0]);
-        var provisioned = utils.getReadableSize(memory_attr[1]);
-        var reserved = utils.getReadableSize(memory_attr[2]);
-        var unreserved = utils.getReadableSize(memory_attr[3]);
-        var total = utils.getReadableSize(memory_attr[4]);
+        var provisionable = utils.getReadableSize(server.memory_provisionable_bytes);
+        var provisioned = utils.getReadableSize((1-server.reservation_ratio) * server.memory_total_bytes -
+                                                server.memory_provisionable_bytes);
+        var reserved = utils.getReadableSize(server.reservation_ratio * server.memory_total_bytes);
+        var unreserved = utils.getReadableSize((1-server.reservation_ratio) * server.memory_total_bytes);
+        var total = utils.getReadableSize(server.memory_total_bytes);
 
         return <div className="memory-overview">
             <div className="row">
