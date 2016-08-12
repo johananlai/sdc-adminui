@@ -20,7 +20,6 @@ var ServerMemoryOverview = React.createClass({
     },
     render: function() {
         var server = this.props.server.toJSON();
-        if (!server.vms) { return null; }
 
         var provisionable = utils.getReadableSize(server.memory_provisionable_bytes);
         var provisioned = utils.getReadableSize((1-server.reservation_ratio) * server.memory_total_bytes -

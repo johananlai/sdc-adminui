@@ -28,8 +28,8 @@ var ServerMemoryUtilizationCircle = React.createClass({
     getChartData: function() {
         var server = this.props.server.toJSON();
 
-        var provisioned = server.disk_pool_size_bytes - (server.unreserved_disk * 1024);
-        var provisionable = server.unreserved_disk * 1024;
+        var provisioned = server.disk_pool_size_bytes - (server.unreserved_disk * 1048576);
+        var provisionable = server.unreserved_disk * 1048576;
 
         if (provisioned < 0) { provisioned = 0; }
         if (provisionable < 0) { provisionable = 0; }
@@ -69,7 +69,7 @@ var ServerMemoryUtilizationCircle = React.createClass({
         var percentmTop = (-(diameter/2) - 9) + 'px';
         var server = this.props.server.toJSON();
 
-        var provisioned = server.disk_pool_size_bytes - (server.unreserved_disk * 1024);
+        var provisioned = server.disk_pool_size_bytes - (server.unreserved_disk * 1048576);
         var total = server.disk_pool_size_bytes;
 
         var util_percent = Math.round(provisioned / total * 100);
